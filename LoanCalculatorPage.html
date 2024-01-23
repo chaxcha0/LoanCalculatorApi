@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #output {
+            margin-top: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        caption {
+            text-align: left;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Loan Calculator</h1>
+
+    <form id="loanForm">
+        <label for="sellingPrice">Selling Price:</label>
+        <input type="text" id="sellingPrice" name="sellingPrice" required>
+
+        <label for="reservationDate">Reservation Date:</label>
+        <input type="date" id="reservationDate" name="reservationDate" required>
+
+        <label for="equityTerm">Equity Term (in months):</label>
+        <input type="number" id="equityTerm" name="equityTerm" required>
+
+        <button type="button" onclick="calculateLoan()">Calculate Loan</button>
+    </form>
+
+    <div id="output">
+        
+    </div>
+
+    <script>
+        function calculateLoan() {
+         
+            var sellingPrice = document.getElementById("sellingPrice").value;
+            var reservationDate = document.getElementById("reservationDate").value;
+            var equityTerm = document.getElementById("equityTerm").value;
+
+            
+            var loanInput = {
+                SellingPrice: parseFloat(sellingPrice),
+                ReservationDate: reservationDate,
+                EquityTerm: parseInt(equityTerm)
+            };
+
+       
+            fetch('https://localhost:5001/api/loancalculator', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(loanInput),
+            })
+            .then(response => response.json())
+            .then(data => {
+               
+                renderOutput(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function renderOutput(data) {
+        var outputDiv = document.getElementById("output");
+        outputDiv.innerHTML = ""; 
+
+      
+        data.forEach((termData, index) => {
+            var table = document.createElement("table");
+            table.innerHTML = `
+                <caption>Equity Schedule - Term ${index + 1}</caption>
+                <tr>
+                    <th>Balance</th>
+                    <th>Due Date</th>
+                    <th>Term</th>
+                </tr>
+                <tr>
+                    <td>${termData.header.balance.toFixed(2)}</td>
+                    <td>${formatDueDate(termData.header.dueDate)}</td>
+                    <td>${termData.header.term}</td>
+                </tr>
+                <tr>
+                    <th>Amount</th>
+                    <th>Interest</th>
+                    <th>Insurance</th>
+                </tr>
+                <tr>
+                    <td>${termData.details.amount.toFixed(2)}</td>
+                    <td>${termData.details.interest.toFixed(2)}</td>
+                    <td>${termData.details.insurance.toFixed(2)}</td>
+                </tr>
+            `;
+
+           
+            outputDiv.appendChild(table);
+        });
+    }
+
+    function formatDueDate(dueDate) {
+        var formattedDate = new Date(dueDate).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+
+        return formattedDate;
+    }
+</script>
+</body>
+</html>
